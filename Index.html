@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고사 타종</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Inter & Noto Sans KR) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome CDN for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.8); }
+        }
+        .glow-effect {
+            animation: pulse-glow 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-slate-100 min-h-screen flex flex-col justify-between p-4 sm:p-6">
+
+    <!-- Header -->
+    <header class="max-w-4xl mx-auto w-full text-center py-6">
+        <div class="inline-flex items-center justify-center bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 px-4 py-1.5 rounded-full text-sm font-medium mb-3 backdrop-blur-md">
+            <i class="fa-solid fa-bell mr-2 animate-bounce"></i> KST 스마트 타종 시스템
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2">
+            고사 타종
+        </h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-3 gap-6 my-auto">
+        
+        <!-- Left & Center: Clock and Status (2 Columns) -->
+        <div class="md:col-span-2 flex flex-col gap-6">
+            
+            <!-- Clock Card -->
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl relative overflow-hidden flex flex-col items-center justify-center text-center">
+                <div class="absolute -top-12 -right-12 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-12 -left-12 w-40 h-40 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <span class="text-indigo-400 font-semibold text-xs sm:text-sm tracking-widest uppercase mb-1">
+                    한국 표준시 (KST)
+                </span>
+                
+                <div id="kst-clock" class="text-5xl sm:text-7xl font-black text-white tracking-wider my-3 font-mono drop-shadow-md">
+                    00:00:00
+                </div>
+                
+                <div id="kst-date" class="text-slate-400 text-sm sm:text-base font-medium">
+                    YYYY년 MM. DD. 요일
+                </div>
+
+                <!-- Audio Activation Prompt -->
+                <div id="audio-prompt" class="mt-6 w-full bg-indigo-600/20 border border-indigo-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center text-white shrink-0 shadow-lg shadow-indigo-500/30">
+                            <i class="fa-solid fa-volume-high"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-white">자동 타종 활성화 필요</p>
+                            <p class="text-xs text-slate-300">브라우저 정책상 소리 권한을 먼저 허용해주세요.</p>
+                        </div>
+                    </div>
+                    <button id="enable-audio-btn" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all shadow-md active:scale-95 shrink-0">
+                        소리 켜기 / 활성화
+                    </button>
+                </div>
+            </div>
+
+            <!-- Next Bell Countdown Card -->
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-3xl p-6 backdrop-blur-xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-4 text-left">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl shrink-0 border border-blue-500/30">
+                        <i class="fa-solid fa-hourglass-half"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 block mb-0.5">다음 타종 시간</span>
+                        <h3 id="next-bell-time" class="text-xl font-bold text-white tracking-wide">계산 중...</h3>
+                    </div>
+                </div>
+                <div class="text-right sm:text-right w-full sm:w-auto bg-slate-900/60 px-5 py-3 rounded-2xl border border-slate-700/50">
+                    <span class="text-xs text-slate-400 block mb-0.5">남은 시간</span>
+                    <span id="countdown-timer" class="text-lg font-mono font-bold text-indigo-400">--:--:--</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Right: Schedule List & Controls (1 Column) -->
+        <div class="bg-slate-800/60 border border-slate-700/60 rounded-3xl p-6 backdrop-blur-xl shadow-xl flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-700/60">
+                    <h2 class="font-bold text-base text-white flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-indigo-400"></i> 타종 시간표 (12개)
+                    </h2>
+                    <span class="text-xs bg-indigo-500/20 text-indigo-300 font-semibold px-2.5 py-1 rounded-full border border-indigo-500/30">KST 기준</span>
+                </div>
+
+                <!-- Schedule List Container -->
+                <div id="schedule-list" class="space-y-2 max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <!-- Manual Test Button -->
+            <div class="mt-6 pt-4 border-t border-slate-700/60">
+                <button id="test-bell-btn" class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white font-bold py-3.5 px-4 rounded-2xl transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 active:scale-98">
+                    <i class="fa-solid fa-bell"></i> 딩동댕 소리 테스트 재생
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Status / Notification Box -->
+    <footer class="max-w-4xl mx-auto w-full text-center py-6 mt-4">
+        <div id="status-message" class="inline-flex items-center gap-2 text-xs text-slate-400 bg-slate-800/40 px-4 py-2 rounded-full border border-slate-700/40">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            시스템 정상 작동 중 (백그라운드에서 시간이 되면 울립니다)
+        </div>
+        <p class="text-xs text-slate-500 mt-2">© KST Smart Chime Bell System. All rights reserved.</p>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // Target schedule list in KST (Hours and Minutes)
+        const targetTimes = [
+            { hour: 8, minute: 40 },
+            { hour: 10, minute: 0 },
+            { hour: 10, minute: 30 },
+            { hour: 12, minute: 10 },
+            { hour: 13, minute: 10 },
+            { hour: 14, minute: 20 },
+            { hour: 14, minute: 40 },
+            { hour: 15, minute: 10 },
+            { hour: 15, minute: 15 },
+            { hour: 15, minute: 45 },
+            { hour: 15, minute: 47 },
+            { hour: 16, minute: 17 }
+        ];
+
+        let audioCtx = null;
+        let isAudioUnlocked = false;
+
+        // Initialize Web Audio API and Unlock on User Interaction
+        function initAudioContext() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            isAudioUnlocked = true;
+            document.getElementById('audio-prompt').style.display = 'none';
+        }
+
+        document.getElementById('enable-audio-btn').addEventListener('click', () => {
+            initAudioContext();
+            playChimeBell();
+            showNotification("오디오가 활성화되었으며 테스트 종이 울립니다.");
+        });
+
+        document.getElementById('test-bell-btn').addEventListener('click', () => {
+            initAudioContext();
+            playChimeBell();
+            showNotification("테스트 딩동댕 차임벨이 울립니다.");
+        });
+
+        // Professional Chime Bell Synthesis (Ding-Dong-Dang with Echo/Delay Simulation)
+        function playChimeBell() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const now = audioCtx.currentTime;
+
+            // Frequencies for a classic school chime (Ding - Dong - Dang)
+            // C5 (523.25 Hz), G4 (392.00 Hz), E4 (329.63 Hz), C4 (261.63 Hz) -> 3-tone melody: G4 -> E4 -> C4 or similar crisp bell chords
+            // Let's use a gorgeous 3-tone sequence: F5 (698.46), C5 (523.25), A4 (440.00) or C5, G4, E4
+            const notes = [
+                { freq: 523.25, time: 0.0, duration: 2.2 },   // 딩 (C5)
+                { freq: 392.00, time: 0.7, duration: 2.2 },   // 동 (G4)
+                { freq: 329.63, time: 1.4, duration: 3.0 }    // 댕 (E4)
+            ];
+
+            // Create Master Gain and Feedback Echo (Delay Node)
+            const masterGain = audioCtx.createGain();
+            masterGain.gain.setValueAtTime(0.6, now);
+
+            // Delay effect for echo/reverb feel
+            const delayNode = audioCtx.createDelay();
+            delayNode.delayTime.value = 0.35; // 350ms echo delay
+
+            const feedbackGain = audioCtx.createGain();
+            feedbackGain.gain.value = 0.35; // Feedback amount for echo trail
+
+            // Connect Echo loop
+            masterGain.connect(delayNode);
+            delayNode.connect(feedbackGain);
+            feedbackGain.connect(delayNode);
+
+            delayNode.connect(audioCtx.destination);
+            masterGain.connect(audioCtx.destination);
+
+            notes.forEach(note => {
+                const startTime = now + note.time;
+
+                // Create oscillator for bell fundamental frequency
+                const osc = audioCtx.createOscillator();
+                osc.type = 'sine'; // Clean bell wave
+                osc.frequency.setValueAtTime(note.freq, startTime);
+
+                // Add harmonic overtone for rich metallic bell texture
+                const overtone = audioCtx.createOscillator();
+                overtone.type = 'triangle';
+                overtone.frequency.setValueAtTime(note.freq * 2.01, startTime); // slightly detuned harmonic
+
+                // Gain envelope for smooth natural decay
+                const gainNode = audioCtx.createGain();
+                gainNode.gain.setValueAtTime(0.0, startTime);
+                gainNode.gain.linearRampToValueAtTime(0.7, startTime + 0.03); // Quick sharp attack
+                // Long exponential decay for rich echo resonance
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + note.duration);
+
+                const overtoneGain = audioCtx.createGain();
+                overtoneGain.gain.setValueAtTime(0.0, startTime);
+                overtoneGain.gain.linearRampToValueAtTime(0.25, startTime + 0.02);
+                overtoneGain.gain.exponentialRampToValueAtTime(0.0001, startTime + (note.duration * 0.7));
+
+                // Connect nodes
+                osc.connect(gainNode);
+                overtone.connect(overtoneGain);
+
+                gainNode.connect(masterGain);
+                overtoneGain.connect(masterGain);
+
+                // Start and stop oscillators
+                osc.start(startTime);
+                osc.stop(startTime + note.duration + 0.5);
+
+                overtone.start(startTime);
+                overtone.stop(startTime + note.duration + 0.5);
+            });
+        }
+
+        // Helper function to get current KST Date object
+        function getKSTDate() {
+            const now = new Date();
+            // Convert system time to KST time
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const kstOffset = 9 * 60 * 60000; // KST is UTC+9
+            return new Date(utc + kstOffset);
+        }
+
+        // Render Schedule List UI
+        function renderScheduleList(currentHour, currentMin) {
+            const listContainer = document.getElementById('schedule-list');
+            listContainer.innerHTML = '';
+
+            const currentTimeMinutes = currentHour * 60 + currentMin;
+
+            targetTimes.forEach((t, index) => {
+                const targetTimeMinutes = t.hour * 60 + t.minute;
+                const formattedTime = `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`;
+                
+                let statusBadge = '<span class="text-xs text-slate-400">대기 중</span>';
+                let itemBg = 'bg-slate-900/40 border-slate-700/40';
+                
+                if (targetTimeMinutes < currentTimeMinutes) {
+                    statusBadge = '<span class="text-xs text-emerald-400 font-medium"><i class="fa-solid fa-check mr-1"></i> 완료</span>';
+                    itemBg = 'bg-slate-900/20 border-slate-800 opacity-60';
+                } else if (targetTimeMinutes === currentTimeMinutes || (targetTimeMinutes - currentTimeMinutes === 0)) {
+                    statusBadge = '<span class="text-xs text-amber-400 font-bold animate-pulse"><i class="fa-solid fa-bell mr-1"></i> 울릴 시간!</span>';
+                    itemBg = 'bg-indigo-600/20 border-indigo-500/50 glow-effect';
+                }
+
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between p-3 rounded-2xl border ${itemBg} transition-all`;
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-7 h-7 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center text-xs font-bold border border-slate-700">
+                            ${index + 1}
+                        </div>
+                        <span class="font-mono font-bold text-white text-sm sm:text-base">${formattedTime}</span>
+                    </div>
+                    <div>${statusBadge}</div>
+                `;
+                listContainer.appendChild(div);
+            });
+        }
+
+        // Track triggered minutes to prevent double triggering in the same minute
+        let lastTriggeredKey = "";
+
+        // Main Clock & Trigger Loop
+        function updateClockAndCheckBell() {
+            const kst = getKSTDate();
+            const year = kst.getFullYear();
+            const month = String(kst.getMonth() + 1).padStart(2, '0');
+            const day = String(kst.getDate()).padStart(2, '0');
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+            const dayOfWeek = days[kst.getDay()];
+
+            const hours = kst.getHours();
+            const minutes = kst.getMinutes();
+            const seconds = kst.getSeconds();
+
+            // Display Clock
+            const timeString = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            const dateString = `${year}년 ${month}월 ${day}일 (${dayOfWeek}) 타종일`;
+
+            document.getElementById('kst-clock').innerText = timeString;
+            document.getElementById('kst-date').innerText = dateString;
+
+            // Check if current time matches any target time
+            const currentTotalMin = hours * 60 + minutes;
+            const minuteKey = `${year}-${month}-${day}-${hours}-${minutes}`;
+
+            targetTimes.forEach(t => {
+                const targetTotalMin = t.hour * 60 + t.minute;
+                if (currentTotalMin === targetTotalMin && lastTriggeredKey !== minuteKey) {
+                    lastTriggeredKey = minuteKey;
+                    if (isAudioUnlocked) {
+                        playChimeBell();
+                        showNotification(`🔔 설정된 타종 시간(${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')})이 되어 종이 울립니다!`);
+                    } else {
+                        showNotification(`⚠️ 타종 시간(${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')})이지만 소리 권한이 필요합니다. '소리 켜기'를 눌러주세요.`);
+                    }
+                }
+            });
+
+            // Calculate Next Bell Countdown
+            calculateNextBell(hours, minutes, seconds);
+
+            // Render Schedule List
+            renderScheduleList(hours, minutes);
+        }
+
+        // Calculate time remaining until next bell
+        function calculateNextBell(currentHour, currentMin, currentSec) {
+            const currentTotalSec = currentHour * 3600 + currentMin * 60 + currentSec;
+            
+            let nextTarget = null;
+            let minDiffSec = Infinity;
+
+            targetTimes.forEach(t => {
+                const targetTotalSec = t.hour * 3600 + t.minute * 60;
+                let diffSec = targetTotalSec - currentTotalSec;
+                if (diffSec < 0) {
+                    // If time has passed today, target is tomorrow
+                    diffSec += 24 * 3600;
+                }
+                if (diffSec < minDiffSec) {
+                    minDiffSec = diffSec;
+                    nextTarget = t;
+                }
+            });
+
+            if (nextTarget) {
+                const nextTimeString = `${String(nextTarget.hour).padStart(2, '0')}:${String(nextTarget.minute).padStart(2, '0')}`;
+                document.getElementById('next-bell-time').innerText = nextTimeString;
+
+                const h = Math.floor(minDiffSec / 3600);
+                const m = Math.floor((minDiffSec % 3600) / 60);
+                const s = minDiffSec % 60;
+
+                const countdownStr = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+                document.getElementById('countdown-timer').innerText = countdownStr;
+            } else {
+                document.getElementById('next-bell-time').innerText = "오늘 일정 완료";
+                document.getElementById('countdown-timer').innerText = "00:00:00";
+            }
+        }
+
+        function showNotification(msg) {
+            const statusBox = document.getElementById('status-message');
+            statusBox.innerHTML = `<span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping mr-1"></span> ${msg}`;
+            setTimeout(() => {
+                statusBox.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> 시스템 정상 작동 중 (백그라운드에서 시간이 되면 울립니다)`;
+            }, 6000);
+        }
+
+        // Run clock every second
+        setInterval(updateClockAndCheckBell, 1000);
+        window.onload = () => {
+            updateClockAndCheckBell();
+        };
+    </script>
+</body>
+</html>
